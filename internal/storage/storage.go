@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -40,18 +41,8 @@ func ConnectionToDB(CollectionName string) (*Storage, error) {
 
 	collection := client.Database("mydb").Collection(CollectionName)
 
-	//first_link := StorageFile{1, "alias", "https://www.youtube.com/watch?v=oEupPPSes2I&list=PLNkWIWHIRwMFJ-3-gI7GC5JDg1ivbIKNR&index=6"}
-	//
-	//InsertOneResult, err := collection.InsertOne(context.TODO(), first_link)
-	//if err != nil {
-	//	return nil, fmt.Errorf("%s: %v", op, err)
-	//}
-	//
-	//fmt.Println("Inserted a single document: ", InsertOneResult.InsertedID)
-
-	first_collection := Storage{collection}
-	fmt.Printf("AAAA", first_collection.db)
-	return &first_collection, nil
+	CreateCollection := Storage{collection}
+	return &CreateCollection, nil
 }
 
 func main() {
@@ -69,17 +60,21 @@ func main() {
 	_ = id
 }
 
-// first_link := StorageFile{1, "alias", "https://www.youtube.com/watch?v=oEupPPSes2I&list=PLNkWIWHIRwMFJ-3-gI7GC5JDg1ivbIKNR&index=6"}
 func (s *Storage) SaveUrl(UrlToSave string, alias string) (int64, error) {
 	const op = "storage.saveUrl"
 	collection := s.db
-	first_link := StorageFile{1, alias, UrlToSave}
-
-	InsertOneResult, err := collection.InsertOne(context.TODO(), first_link)
+	count, err := collection.CountDocuments(context.TODO(), bson.M{}) // Счетчик документов в коллекции, передаем базовый контекст (в более сложных случаях можно передать какой-нибудь
+	// другой контекст, который будет управлять временем и отменой операции, а также устанавливается filter, в нашем случае пустой, т.к. нужна вся коллекция)
 	if err != nil {
-		return 1, fmt.Errorf("%s: %v", op, err)
+		return 0, fmt.Errorf("%s: %v", op, err)
 	}
 
-	fmt.Println("Inserted a single document: ", InsertOneResult.InsertedID)
-	return 1, nil
+	linkToSave := StorageFile{ID: int(count) + 1, Alias: alias, URL: UrlToSave}
+
+	InsertOneResult, err := collection.InsertOne(context.TODO(), linkToSave)
+	if err != nil {
+		return 0, fmt.Errorf("%s: %v", op, err)
+	}
+	_ = InsertOneResult // говорим Go, что эта штука нам ещё понадобиться(дай бог)
+	return int64(linkToSave.ID), nil
 }
