@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Env         string `yaml:"env" env-default:"local" env-required:"true"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server"`
+	Env        string `yaml:"env" env-default:"local" env-required:"true"`
+	Dbhost     string `yaml:"dbhost" env-required:"true"`
+	Dbport     string `yaml:"dbport" env-required:"true"`
+	HTTPServer `yaml:"http_server"`
 }
 
 type HTTPServer struct {
@@ -20,7 +21,6 @@ type HTTPServer struct {
 }
 
 func MustLoad() *Config {
-	os.Setenv("CONFIG_PATH", "C:\\Users\\iliyh\\GolandProjects\\awesomeProject\\config\\local.yaml")
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		log.Fatal("CONFIG_PATH is not set")

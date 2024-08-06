@@ -1,12 +1,12 @@
-package main
+package storage
 
 import (
+	"awesomeProject/internal/config"
 	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 type Storage struct {
@@ -19,11 +19,13 @@ type StorageFile struct {
 	URL   string
 }
 
-func ConnectionToDB(CollectionName string) (*Storage, error) {
+func ConnectionToDB(CollectionName string, cfg *config.Config) (*Storage, error) {
 
 	const op = "storage.mongoDB.ConnectionToDB"
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	dsn := fmt.Sprintf("mongodb://%s:%s", cfg.Dbhost, cfg.Dbport)
+
+	clientOptions := options.Client().ApplyURI(dsn)
 
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 
@@ -43,21 +45,6 @@ func ConnectionToDB(CollectionName string) (*Storage, error) {
 
 	CreateCollection := Storage{collection}
 	return &CreateCollection, nil
-}
-
-func main() {
-	const op = "storage.main"
-
-	storage, err := ConnectionToDB("url-shortener")
-	if err != nil {
-		log.Fatalf("%s: %v", op, err)
-	}
-	_ = storage
-	id, err := storage.SaveUrl("https://www.youtube.com/watch?v=oEupPPSes2I&list=PLNkWIWHIRwMFJ-3-gI7GC5JDg1ivbIKNR&index=6", "alias")
-	if err != nil {
-		log.Fatalf("%s: %v", op, err)
-	}
-	_ = id
 }
 
 func (s *Storage) SaveUrl(UrlToSave string, alias string) (int64, error) {
